@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Link from "next/link";
-import React from 'react';
+import React from "react";
 
 
 export default function Home() {
@@ -126,7 +126,7 @@ export default function Home() {
         <h1 style={{ color: "var(--link-color)" }}>🍇 Grape or Grave</h1>
         <p>
           Eat grapes. Each grape you eat earns you <b>R100,000</b> — but one random grape is deadly.
-          If you eat the deadly grape, it's game over. How many grapes can you eat without dying?
+          If you eat the deadly grape, its game over. How many grapes can you eat without dying?
         </p>
         <input
           type="text"
