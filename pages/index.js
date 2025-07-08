@@ -1,115 +1,184 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabaseClient";
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+  const [player, setPlayer] = useState(null);
+  const [nameInput, setNameInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("eating"); // "eating" | "dead" | "intro"
+  const [introDone, setIntroDone] = useState(false);
+
+  useEffect(() => {
+    const savedId = localStorage.getItem("playerId");
+    if (savedId) {
+      loadPlayer(savedId);
+    } else {
+      setIntroDone(false);
+    }
+  }, []);
+
+  async function loadPlayer(id) {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("players")
+      .select()
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      console.error("Error loading player:", error);
+      localStorage.removeItem("playerId");
+      setIntroDone(false);
+      setLoading(false);
+      return;
+    }
+
+    setPlayer(data);
+    setStatus(data.is_dead ? "dead" : "eating");
+    setIntroDone(true);
+    setLoading(false);
+  }
+
+  async function createPlayer() {
+    if (!nameInput.trim()) return alert("Please enter your name");
+
+    setLoading(true);
+    const deathGrape = Math.floor(Math.random() * 1000) + 1;
+    const { data, error } = await supabase
+      .from("players")
+      .insert([
+        {
+          name: nameInput.trim(),
+          grapes_eaten: 0,
+          bank_balance: 0,
+          is_dead: false,
+          death_grape_number: deathGrape,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating player:", error);
+      alert("Failed to create player. Try again.");
+      setLoading(false);
+      return;
+    }
+
+    localStorage.setItem("playerId", data.id);
+    setPlayer(data);
+    setStatus("eating");
+    setIntroDone(true);
+    setLoading(false);
+  }
+
+  async function eatGrape() {
+    if (!player || player.is_dead) return;
+
+    setLoading(true);
+    const nextGrape = player.grapes_eaten + 1;
+
+    if (nextGrape === player.death_grape_number) {
+      const { data, error } = await supabase
+        .from("players")
+        .update({ grapes_eaten: nextGrape, is_dead: true })
+        .eq("id", player.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating player (dead):", error);
+        setLoading(false);
+        return;
+      }
+
+      setPlayer(data);
+      setStatus("dead");
+      setLoading(false);
+    } else {
+      const newBalance = player.bank_balance + 100000;
+
+      const { data, error } = await supabase
+        .from("players")
+        .update({ grapes_eaten: nextGrape, bank_balance: newBalance })
+        .eq("id", player.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating player:", error);
+        setLoading(false);
+        return;
+      }
+
+      setPlayer(data);
+      setLoading(false);
+    }
+  }
+
+  if (!introDone) {
+    // Show intro + rules + name input screen
+    return (
+      <main style={{ maxWidth: 600, margin: "auto", padding: 20 }}>
+        <h1 style={{ color: "var(--link-color)" }}>🍇 Grape or Grave</h1>
+        <p>
+          Eat grapes. Each grape you eat earns you <b>R100,000</b> — but one random grape is deadly.
+          If you eat the deadly grape, it's game over. How many grapes can you eat without dying?
+        </p>
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={nameInput}
+          onChange={(e) => setNameInput(e.target.value)}
+          style={{
+            padding: "0.5rem",
+            fontSize: "1rem",
+            width: "100%",
+            marginTop: 10,
+            backgroundColor: "#222",
+            border: "1px solid #444",
+            color: "#eee",
+            borderRadius: 4,
+          }}
+          disabled={loading}
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+        <button onClick={createPlayer} disabled={loading} style={{ marginTop: 15, width: "100%" }}>
+          {loading ? "Starting..." : "Start Playing"}
+        </button>
+        <p style={{ marginTop: 20 }}>
+          <Link href="/leaderboard" legacyBehavior>
+            <a>View Leaderboard</a>
+          </Link>
+        </p>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+    );
+  }
+
+  return (
+    <main style={{ maxWidth: 600, margin: "auto", padding: 20, textAlign: "center" }}>
+      <h1 style={{ color: "var(--link-color)" }}>🍇 Grape or Grave</h1>
+      <h2>Player: {player.name}</h2>
+      <h3>💰 Balance: R{player.bank_balance.toLocaleString()}</h3>
+      <h4>🍇 Grapes Eaten: {player.grapes_eaten}</h4>
+
+      {status === "dead" ? (
+        <h2 style={{ color: "#cf6679", marginTop: 40 }}>☠️ You ate the deadly grape! Game Over.</h2>
+      ) : (
+        <button
+          onClick={eatGrape}
+          disabled={loading}
+          style={{ marginTop: 40, fontSize: "1.5rem", cursor: loading ? "wait" : "pointer" }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          {loading ? "Eating..." : "Eat a Grape"}
+        </button>
+      )}
+
+      <p style={{ marginTop: 30 }}>
+        <Link href="/leaderboard" legacyBehavior>
+          <a>View Leaderboard</a>
+        </Link>
+      </p>
+    </main>
   );
 }
