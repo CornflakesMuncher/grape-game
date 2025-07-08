@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Link from "next/link";
+import React from 'react';
+
 
 export default function Home() {
   const [player, setPlayer] = useState(null);
