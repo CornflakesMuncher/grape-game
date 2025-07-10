@@ -24,7 +24,7 @@ export default function Leaderboard() {
         .from("players")
         .select("name, bank_balance, grapes_eaten")
         .eq("is_dead", true)
-        .order("bank_balance", { ascending: false })
+        .order("bank_balance", { ascending: true })
         .limit(10);
 
       if (aliveError || deadError) {
@@ -95,10 +95,16 @@ export default function Leaderboard() {
       )}
 
       <p style={{ marginTop: 20 }}>
-        <Link href="/" legacyBehavior>
+        <Link href="/grape-or-grave" legacyBehavior>
           <a>← Back to Game</a>
         </Link>
       </p>
+      <p style={{ marginTop: 10 }}>
+  <Link href="/hub" legacyBehavior>
+    <a>← Back to Hub</a>
+  </Link>
+</p>
+
     </main>
   );
 }
