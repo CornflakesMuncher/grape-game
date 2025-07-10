@@ -20,12 +20,32 @@ export default function Hub() {
   ];
 
   useEffect(() => {
-    const storedName = localStorage.getItem("playerName");
-    if (storedName) {
-      setPlayerName(storedName);
+  async function checkPlayer() {
+    const savedId = localStorage.getItem("playerId");
+    if (!savedId) {
+      router.replace("/login");
+      return;
     }
+
+    const { data, error } = await supabase
+      .from("players")
+      .select("name")
+      .eq("id", savedId)
+      .single();
+
+    if (error || !data) {
+      localStorage.removeItem("playerId");
+      router.replace("/login");
+      return;
+    }
+
+    setPlayerName(data.name);
     setLoading(false);
-  }, []);
+  }
+
+  checkPlayer();
+}, [router]);
+
 
   if (loading) return <div>Loading...</div>;
 
