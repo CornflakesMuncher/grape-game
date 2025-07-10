@@ -12,7 +12,7 @@ export default function Login() {
       return;
     }
     localStorage.setItem("playerName", playerName.trim());
-    router.push("/hub");
+    router.replace("/hub");
   };
 
   return (

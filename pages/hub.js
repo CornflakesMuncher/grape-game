@@ -38,7 +38,8 @@ export default function Hub() {
 
       {/* Center title */}
       <div className="text-center mt-12">
-        <h1 className="text-5xl font-extrabold text-purple-600 dark:text-purple-400">
+        <h1 className="text-5xl font-extrabold text-purple-600 dark:text-purple-400"
+        style={{whiteSpace: "nowrap"}}>
           🍇 GrapeHub 🍇
         </h1>
       </div>
