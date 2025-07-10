@@ -6,7 +6,12 @@ export default function Index() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push("/login");
+    const playerId = localStorage.getItem("playerId");
+    if (playerId) {
+      router.replace("/hub");
+    } else {
+      router.replace("/login");
+    }
   }, [router]);
 
   return null;
