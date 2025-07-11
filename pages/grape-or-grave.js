@@ -113,7 +113,7 @@ export default function GrapeOrGrave() {
 
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
         Eat grapes. Each grape earns you <b>$1,000</b> — but one random grape is deadly.
-        If you eat the deadly grape, it's game over. How many grapes can you eat without dying?
+        If you eat the deadly grape, its game over. How many grapes can you eat without dying?
       </p>
 
       <h2 className="text-lg font-semibold mb-1">Player: {player.name}</h2>
