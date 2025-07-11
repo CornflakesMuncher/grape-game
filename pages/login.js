@@ -9,68 +9,85 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleStart = async () => {
-    const trimmedName = nameInput.trim();
+ const handleStart = async () => {
+  const trimmedName = nameInput.trim();
 
-    if (!trimmedName) {
-      setError("Please enter a name");
-      return;
-    }
+  if (!trimmedName) {
+    setError("Please enter a name");
+    return;
+  }
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    // Check if name already exists
-    const { data: existingPlayer, error: fetchError } = await supabase
-      .from("players")
-      .select("id")
-      .eq("name", trimmedName)
-      .maybeSingle();
+  // Check if name already exists
+  const { data: existingPlayer, error: fetchError } = await supabase
+    .from("players")
+    .select("id")
+    .eq("name", trimmedName)
+    .maybeSingle();
 
-    if (fetchError) {
-      setError("Error checking name. Try again.");
-      console.error(fetchError);
-      setLoading(false);
-      return;
-    }
+  if (fetchError) {
+    setError("Error checking name. Try again.");
+    console.error(fetchError);
+    setLoading(false);
+    return;
+  }
 
-    if (existingPlayer) {
-      setError("Name already in use. Please choose another.");
-      setLoading(false);
-      return;
-    }
+  if (existingPlayer) {
+    setError("Name already in use. Please choose another.");
+    setLoading(false);
+    return;
+  }
 
-    // Create new player
-    const deathGrape = Math.floor(Math.random() * 1000) + 1;
-    const { data: newPlayer, error: insertError } = await supabase
-      .from("players")
-      .insert([
-        {
-          name: trimmedName,
-          grapes_eaten: 0,
-          bank_balance: 0,
-          is_dead: false,
-          death_grape_number: deathGrape,
-        },
-      ])
-      .select()
-      .single();
+  // Step 1: Create new player in `players` table
+  const { data: newPlayer, error: insertError } = await supabase
+    .from("players")
+    .insert([
+      {
+        name: trimmedName,
+        bank_balance: 0,
+      },
+    ])
+    .select()
+    .single();
 
-    if (insertError) {
-      setError("Failed to create player.");
-      console.error(insertError);
-      setLoading(false);
-      return;
-    }
+  if (insertError) {
+    setError("Failed to create player.");
+    console.error("Insert error (players):", insertError);
+    setLoading(false);
+    return;
+  }
 
-    // Save ID and redirect to hub
-    localStorage.setItem("playerId", newPlayer.id);
-    router.replace("/hub");
-  };
+  // Step 2: Create stats row for Grape or Grave
+  const deathGrape = Math.floor(Math.random() * 1000) + 1;
+  const { error: statsError } = await supabase
+    .from("grape_or_grave_stats")
+    .insert([
+      {
+        player_id: newPlayer.id,
+        grapes_eaten: 0,
+        is_dead: false,
+        death_grape_number: deathGrape,
+      },
+    ]);
+
+  if (statsError) {
+    setError("Failed to initialize game stats.");
+    console.error("Insert error (grape_or_grave_stats):", statsError);
+    setLoading(false);
+    return;
+  }
+
+  // Save player ID and redirect
+  localStorage.setItem("playerId", newPlayer.id);
+  router.replace("/hub");
+};
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-purple-50 text-gray-800">
-      <h1 className="text-4xl font-bold mb-6">🍇 Welcome to Grape World</h1>
+      <h1 className="text-4xl font-bold mb-6">🍇 Welcome to Grape Hub</h1>
       <div className="space-y-4">
         <input
           type="text"
