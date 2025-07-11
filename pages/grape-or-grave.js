@@ -108,7 +108,7 @@ export default function GrapeOrGrave() {
   return (
     <main className="max-w-xl mx-auto p-6 text-center">
       <h1 className="text-5xl font-extrabold text-purple-600 dark:text-purple-400 mb-4">
-        🍇 Grape or Grave 🍇
+        🍇 Grape or Grave ☠️
       </h1>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
